@@ -9,6 +9,7 @@
 
 mod error;
 
+use async_trait::async_trait;
 use error::Result;
 use hyper::{Body, Client, Request};
 use hyper_tls::HttpsConnector;
@@ -36,6 +37,13 @@ struct TrackingRequest<'a> {
 struct TrackingRequestUnstructured {
     pub fields: HashMap<String, String>,
     pub messages: Vec<String>,
+}
+
+///
+#[async_trait]
+pub trait AsyncLogSender {
+    ///
+    async fn push(&self, ev: TrackingEvent);
 }
 
 ///
@@ -83,14 +91,7 @@ impl HumioLogger {
         }
     }
 
-    ///
-    pub async fn push(&self, ev: TrackingEvent) {
-        let mut outbox = self.outbox.lock().await;
-        outbox.push(ev);
-    }
-
-    ///
-    pub async fn update(&self) {
+    async fn update(&self) {
         let outbox = {
             let mut outbox = self.outbox.lock().await;
             //Takes ownership of outbox, replaces it with new one
@@ -127,5 +128,15 @@ impl HumioLogger {
         client.request(req).await?;
 
         Ok(())
+    }
+}
+
+///
+#[async_trait]
+impl AsyncLogSender for HumioLogger {
+    ///
+    async fn push(&self, ev: TrackingEvent) {
+        let mut outbox = self.outbox.lock().await;
+        outbox.push(ev);
     }
 }
