@@ -102,7 +102,7 @@ impl HumioLogger {
             .chunks(HUMIO_EVENT_CHUNK_SIZE)
         {
             while self.send(ev_chunk).await.is_err() {
-                sleep(HUMIO_SEND_FAILED_RETRY_DELAY).await
+                sleep(HUMIO_SEND_FAILED_RETRY_DELAY).await;
             }
         }
     }
